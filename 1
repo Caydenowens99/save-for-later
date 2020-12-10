@@ -1,0 +1,57 @@
+package dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import entity.School;
+import entity.Student;
+
+// This class is utilized to interact with the database for schools table and be utilized in methods/code in our java program
+public class SchoolDao { 
+
+	//method to instantiate our connection
+	private Connection connection;
+	// query to get schools
+	private final String GET_SCHOOLS_QUERY = "SELECT * FROM SCHOOLS";
+	
+	private StudentDao studentDao; // variable to house our schoolDao datatype
+	
+	//Query to display an individual team
+	private final String GET_SCHOOL_BY_ID_QUERY = "SELECT * FROM schools WHERE school_id = ?";
+	
+	//constructor to establish SQL connection
+	public SchoolDao() {
+		connection = DBConnection.getConnection();
+		studentDao = new StudentDao();
+	}
+	
+	//need to get all the schools for displaySchools method
+	//method to get schools and display them
+	public List <School> getSchools() throws SQLException {
+		ResultSet rs = connection.prepareStatement(GET_SCHOOLS_QUERY).executeQuery();
+		List<School> schools = new ArrayList<School>();										//create new arraylist
+		while(rs.next()) {																	// populate ArrayLIst with School data type with a WHILE loop
+			schools.add(populateSchools(rs.getInt(1), rs.getString(2)));					//Grabbing the first column, grabbing the second column
+		}
+		return schools;
+	}
+	//populate team mehtod to populate our list
+	private School populateSchools (int id, String name) throws SQLException {
+		//our constructor for School has three parameters (Id, schoolName, List of Students
+		//thus we must use our StudentDao class to interact with the database to fufill the third parameter with the list of students
+		//studentDao.getStudentsBySchoolID will get all the members that belong to the specific team of the ID we pass into it
+		return new School(id, name, studentDao.getStudentsBySchoolId(id));
+	}
+//method to have user enter in school_id to get roster. 
+	public School getSchoolById (int id) throws SQLException {
+		PreparedStatement ps = connection.prepareStatement(GET_SCHOOL_BY_ID_QUERY);
+		ps.setInt(1, id);
+		ResultSet rs = ps.executeQuery();
+		rs.next();
+		return populateSchools(rs.getInt(1), rs.getString(2));
+	}
+}
